@@ -51,7 +51,7 @@ export default function WaitlistPage() {
   const [joined, setJoined] = useState(false);
   const [openFaq, setOpenFaq] = useState(0);
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!/^\S+@\S+\.\S+$/.test(email)) {
       setError("Enter a valid email address.");
@@ -59,10 +59,24 @@ export default function WaitlistPage() {
     }
     setError("");
     setJoining(true);
-    window.setTimeout(() => {
+    try {
+      const response = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Unable to join the waitlist.");
+      }
+
       setJoining(false);
       setJoined(true);
-    }, 700);
+    } catch (submissionError) {
+      setJoining(false);
+      setError(submissionError instanceof Error ? submissionError.message : "Unable to join the waitlist.");
+    }
   }
 
   if (joined) {
